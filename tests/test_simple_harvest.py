@@ -14,15 +14,17 @@ def test_simple_harvest(
     chain,
     strategist_ms,
     gauge,
+    booster,
     voter,
     rewardsContract,
     amount,
 ):
     ## deposit to the vault after approving
     startingWhale = token.balanceOf(whale)
-    token.approve(vault, 2 ** 256 - 1, {"from": whale})
+    token.approve(vault, 2**256 - 1, {"from": whale})
     vault.deposit(amount, {"from": whale})
     newWhale = token.balanceOf(whale)
+    booster.earmarkRewards(strategy.pid(), {"from": strategist})
 
     # this is part of our check into the staking contract balance
     stakingBeforeHarvest = rewardsContract.balanceOf(strategy)
@@ -40,13 +42,20 @@ def test_simple_harvest(
     # try and include custom logic here to check that funds are in the staking contract (if needed)
     assert rewardsContract.balanceOf(strategy) > stakingBeforeHarvest
 
-    # simulate 1 day of earnings
-    chain.sleep(86400)
+    # simulate 6 hours of earnings so we don't outrun our convex earmark
+    chain.sleep(21600)
     chain.mine(1)
 
     # harvest, store new asset amount
     chain.sleep(1)
+    pending_rewards = strategy.claimableProfitInUsdt()
+    assert strategy.stakedBalance() > 0
+    assert token.balanceOf(strategy) == 0
+    claimable_crv = strategy.claimableBalance()
+    assert claimable_crv > 0
+    print("\nPending claimable in USDT after 1 day: ", pending_rewards / 1e6)
     strategy.harvest({"from": gov})
+    assert strategy.claimableProfitInUsdt() == 0
     chain.sleep(1)
     new_assets = vault.totalAssets()
     # confirm we made money, or at least that we have about the same
@@ -57,76 +66,9 @@ def test_simple_harvest(
     print(
         "\nEstimated DAI APR: ",
         "{:.2%}".format(
-            ((new_assets - old_assets) * 365) / (strategy.estimatedTotalAssets())
+            ((new_assets - old_assets) * (365 * 4)) / (strategy.estimatedTotalAssets())
         ),
     )
-
-    # change our optimal deposit asset
-    strategy.setOptimal(1, {"from": gov})
-
-    # store asset amount
-    before_usdc_assets = vault.totalAssets()
-    assert token.balanceOf(strategy) == 0
-
-    # try and include custom logic here to check that funds are in the staking contract (if needed)
-    assert rewardsContract.balanceOf(strategy) > 0
-
-    # simulate 1 day of earnings
-    chain.sleep(86400)
-    chain.mine(1)
-
-    # harvest, store new asset amount
-    chain.sleep(1)
-    strategy.harvest({"from": gov})
-    chain.sleep(1)
-    after_usdc_assets = vault.totalAssets()
-    # confirm we made money, or at least that we have about the same
-    assert after_usdc_assets >= before_usdc_assets
-
-    # Display estimated APR
-    print(
-        "\nEstimated USDC APR: ",
-        "{:.2%}".format(
-            ((after_usdc_assets - before_usdc_assets) * 365)
-            / (strategy.estimatedTotalAssets())
-        ),
-    )
-
-    # change our optimal deposit asset
-    strategy.setOptimal(2, {"from": gov})
-
-    # store asset amount
-    before_usdt_assets = vault.totalAssets()
-    assert token.balanceOf(strategy) == 0
-    assert strategy.estimatedTotalAssets() > 0
-
-    # try and include custom logic here to check that funds are in the staking contract (if needed)
-    assert rewardsContract.balanceOf(strategy) > 0
-
-    # simulate 1 day of earnings
-    chain.sleep(86400)
-    chain.mine(1)
-
-    # harvest, store new asset amount
-    chain.sleep(1)
-    strategy.harvest({"from": gov})
-    chain.sleep(1)
-    after_usdt_assets = vault.totalAssets()
-    # confirm we made money, or at least that we have about the same
-    assert after_usdt_assets >= before_usdt_assets
-
-    # Display estimated APR
-    print(
-        "\nEstimated USDT APR: ",
-        "{:.2%}".format(
-            ((after_usdt_assets - before_usdt_assets) * (365))
-            / (strategy.estimatedTotalAssets())
-        ),
-    )
-
-    # simulate a day of waiting for share price to bump back up
-    chain.sleep(86400)
-    chain.mine(1)
 
     # withdraw and confirm we made money, or at least that we have about the same
     vault.withdraw({"from": whale})

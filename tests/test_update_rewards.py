@@ -42,7 +42,7 @@ def test_update_to_zero_then_back(
     strategy.harvest({"from": gov})
 
     # attach our new strategy and approve it on the proxy
-    vault.addStrategy(newStrategy, 10_000, 0, 2 ** 256 - 1, 1_000, {"from": gov})
+    vault.addStrategy(newStrategy, 10_000, 0, 2**256 - 1, 1_000, {"from": gov})
 
     assert vault.withdrawalQueue(1) == newStrategy
     assert vault.strategies(newStrategy)[2] == 10_000
@@ -52,26 +52,25 @@ def test_update_to_zero_then_back(
     ## deposit to the vault after approving; this is basically just our simple_harvest test
     before_pps = vault.pricePerShare()
     startingWhale = token.balanceOf(whale)
-    token.approve(vault, 2 ** 256 - 1, {"from": whale})
-    vault.deposit(1000e18, {"from": whale})
-
-    # simulate 1 day of waiting
-    chain.sleep(86400)
-    chain.mine(1)
+    token.approve(vault, 2**256 - 1, {"from": whale})
+    vault.deposit(amount, {"from": whale})
 
     # harvest, store asset amount
+    chain.sleep(1)
     tx = newStrategy.harvest({"from": gov})
+    chain.sleep(1)
     old_assets_dai = vault.totalAssets()
     assert old_assets_dai > 0
     assert token.balanceOf(newStrategy) == 0
     assert newStrategy.estimatedTotalAssets() > 0
 
-    # simulate 1 day of earnings
-    chain.sleep(86400)
+    # simulate 6 hours of earnings so we don't outrun our convex earmark
+    chain.sleep(21600)
     chain.mine(1)
 
     # harvest after a day, store new asset amount
     newStrategy.harvest({"from": gov})
+    chain.sleep(1)
     new_assets_dai = vault.totalAssets()
     # we can't use strategyEstimated Assets because the profits are sent to the vault
     assert new_assets_dai >= old_assets_dai
@@ -80,7 +79,7 @@ def test_update_to_zero_then_back(
     print(
         "\nEstimated DAI APR (Rewards On): ",
         "{:.2%}".format(
-            ((new_assets_dai - old_assets_dai) * (365))
+            ((new_assets_dai - old_assets_dai) * (365 * 4))
             / (newStrategy.estimatedTotalAssets())
         ),
     )
@@ -114,17 +113,21 @@ def test_update_to_zero_then_back(
     new_pps = vault.pricePerShare()
     old_assets_dai = vault.totalAssets()
 
-    # harvest with our new rewards token attached
-    chain.sleep(86400)
+    # simulate 6 hours of earnings so we don't outrun our convex earmark
+    chain.sleep(21600)
     chain.mine(1)
+
+    # harvest with our new rewards token attached
     newStrategy.harvest({"from": gov})
+    chain.sleep(1)
+    chain.mine(1)
     new_assets_dai = vault.totalAssets()
 
     # Display estimated APR
     print(
         "\nEstimated DAI APR (Rewards Off): ",
         "{:.2%}".format(
-            ((new_assets_dai - old_assets_dai) * (365))
+            ((new_assets_dai - old_assets_dai) * (365 * 4))
             / (newStrategy.estimatedTotalAssets())
         ),
     )
@@ -146,9 +149,11 @@ def test_update_to_zero_then_back(
     new_pps = vault.pricePerShare()
     old_assets_dai = vault.totalAssets()
 
-    # harvest with our new rewards token attached
-    chain.sleep(86400)
+    # simulate 6 hours of earnings so we don't outrun our convex earmark
+    chain.sleep(21600)
     chain.mine(1)
+
+    # harvest with our new rewards token attached
     newStrategy.harvest({"from": gov})
 
     # confirm that we are selling our rewards token
@@ -159,15 +164,15 @@ def test_update_to_zero_then_back(
 
     # Display estimated APR
     print(
-        "\nEstimated DAI APR (Rewards Back On, 2 days of rewards tokens): ",
+        "\nEstimated DAI APR (Rewards Back On, 6 hours of rewards tokens): ",
         "{:.2%}".format(
-            ((new_assets_dai - old_assets_dai) * (365))
+            ((new_assets_dai - old_assets_dai) * (365 * 4))
             / (newStrategy.estimatedTotalAssets())
         ),
     )
 
-    # simulate a day of waiting for share price to bump back up
-    chain.sleep(86400)
+    # simulate 6 hours of earnings so we don't outrun our convex earmark
+    chain.sleep(21600)
     chain.mine(1)
 
     # withdraw and confirm we made money
@@ -217,7 +222,7 @@ def test_update_from_zero_to_off(
     strategy.harvest({"from": gov})
 
     # attach our new strategy and approve it on the proxy
-    vault.addStrategy(newStrategy, 10_000, 0, 2 ** 256 - 1, 1_000, {"from": gov})
+    vault.addStrategy(newStrategy, 10_000, 0, 2**256 - 1, 1_000, {"from": gov})
 
     assert vault.withdrawalQueue(1) == newStrategy
     assert vault.strategies(newStrategy)[2] == 10_000
@@ -227,26 +232,26 @@ def test_update_from_zero_to_off(
     ## deposit to the vault after approving; this is basically just our simple_harvest test
     before_pps = vault.pricePerShare()
     startingWhale = token.balanceOf(whale)
-    token.approve(vault, 2 ** 256 - 1, {"from": whale})
-    vault.deposit(1000e18, {"from": whale})
-
-    # simulate 1 day of waiting
-    chain.sleep(86400)
-    chain.mine(1)
+    token.approve(vault, 2**256 - 1, {"from": whale})
+    vault.deposit(amount, {"from": whale})
 
     # harvest, store asset amount
+    chain.sleep(1)
     tx = newStrategy.harvest({"from": gov})
+    chain.sleep(1)
     old_assets_dai = vault.totalAssets()
     assert old_assets_dai > 0
     assert token.balanceOf(newStrategy) == 0
     assert newStrategy.estimatedTotalAssets() > 0
 
-    # simulate 1 day of earnings
-    chain.sleep(86400)
+    # simulate 6 hours of earnings so we don't outrun our convex earmark
+    chain.sleep(21600)
     chain.mine(1)
 
     # harvest after a day, store new asset amount
     newStrategy.harvest({"from": gov})
+    chain.sleep(1)
+    chain.mine(1)
     new_assets_dai = vault.totalAssets()
     # we can't use strategyEstimated Assets because the profits are sent to the vault
     assert new_assets_dai >= old_assets_dai
@@ -255,7 +260,7 @@ def test_update_from_zero_to_off(
     print(
         "\nEstimated DAI APR (Rewards On): ",
         "{:.2%}".format(
-            ((new_assets_dai - old_assets_dai) * (365))
+            ((new_assets_dai - old_assets_dai) * (365 * 4))
             / (newStrategy.estimatedTotalAssets())
         ),
     )
@@ -289,17 +294,21 @@ def test_update_from_zero_to_off(
     new_pps = vault.pricePerShare()
     old_assets_dai = vault.totalAssets()
 
-    # harvest with our new rewards token attached
-    chain.sleep(86400)
+    # simulate 6 hours of earnings so we don't outrun our convex earmark
+    chain.sleep(21600)
     chain.mine(1)
+
+    # harvest with our new rewards token attached
     newStrategy.harvest({"from": gov})
+    chain.sleep(1)
+    chain.mine(1)
     new_assets_dai = vault.totalAssets()
 
     # Display estimated APR
     print(
         "\nEstimated DAI APR (Rewards Off): ",
         "{:.2%}".format(
-            ((new_assets_dai - old_assets_dai) * (365))
+            ((new_assets_dai - old_assets_dai) * (365 * 4))
             / (newStrategy.estimatedTotalAssets())
         ),
     )
@@ -321,23 +330,27 @@ def test_update_from_zero_to_off(
     # track our new pps and assets
     old_assets_dai = vault.totalAssets()
 
-    # harvest with our new rewards token attached
-    chain.sleep(86400)
+    # simulate 6 hours of earnings so we don't outrun our convex earmark
+    chain.sleep(21600)
     chain.mine(1)
+
+    # harvest with our new rewards token attached
     newStrategy.harvest({"from": gov})
+    chain.sleep(1)
+    chain.mine(1)
     new_assets_dai = vault.totalAssets()
 
     # Display estimated APR
     print(
         "\nEstimated DAI APR (Rewards Off Still): ",
         "{:.2%}".format(
-            ((new_assets_dai - old_assets_dai) * (365))
+            ((new_assets_dai - old_assets_dai) * (365 * 4))
             / (newStrategy.estimatedTotalAssets())
         ),
     )
 
-    # simulate a day of waiting for share price to bump back up
-    chain.sleep(86400)
+    # simulate 6 hours of earnings so we don't outrun our convex earmark
+    chain.sleep(21600)
     chain.mine(1)
 
     # withdraw and confirm we made money
@@ -384,24 +397,23 @@ def test_change_rewards(
     strategy.harvest({"from": gov})
 
     # attach our new strategy and approve it on the proxy
-    vault.addStrategy(newStrategy, 10_000, 0, 2 ** 256 - 1, 1_000, {"from": gov})
+    vault.addStrategy(newStrategy, 10_000, 0, 2**256 - 1, 1_000, {"from": gov})
 
     ## deposit to the vault after approving; this is basically just our simple_harvest test
     before_pps = vault.pricePerShare()
     startingWhale = token.balanceOf(whale)
-    token.approve(vault, 2 ** 256 - 1, {"from": whale})
-    vault.deposit(1000e18, {"from": whale})
-
-    # simulate 1 day of waiting
-    chain.sleep(86400)
-    chain.mine(1)
+    token.approve(vault, 2**256 - 1, {"from": whale})
+    vault.deposit(amount, {"from": whale})
 
     # harvest, store asset amount
+    chain.sleep(1)
     tx = newStrategy.harvest({"from": gov})
+    chain.sleep(1)
+    chain.mine(1)
     old_assets_dai = vault.totalAssets()
 
-    # simulate 1 day of earnings
-    chain.sleep(86400)
+    # simulate 6 hours of earnings so we don't outrun our convex earmark
+    chain.sleep(21600)
     chain.mine(1)
 
     # harvest after a day, store new asset amount
@@ -414,7 +426,7 @@ def test_change_rewards(
     print(
         "\nEstimated DAI APR (Rewards On): ",
         "{:.2%}".format(
-            ((new_assets_dai - old_assets_dai) * (365))
+            ((new_assets_dai - old_assets_dai) * (365 * 4))
             / (newStrategy.estimatedTotalAssets())
         ),
     )
