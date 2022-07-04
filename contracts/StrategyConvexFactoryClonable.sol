@@ -526,6 +526,18 @@ contract StrategyConvexFactoryClonable is BaseStrategy {
     /* ========== CONSTANT FUNCTIONS ========== */
     // these should stay the same across different wants.
 
+    function deployCredit() public onlyKeepers {
+        uint256 profit = 0;
+        uint256 loss = 0;
+        uint256 debtPayment = 0;
+        
+        // Send any available funds in the vault to the strategy
+        uint256 debtOutstanding = vault.report(profit, loss, debtPayment);
+
+        // Check if free returns are left, and re-invest them
+        adjustPosition(debtOutstanding);
+    }
+    
     function adjustPosition(uint256 _debtOutstanding) internal override {
         if (emergencyExit) {
             return;
