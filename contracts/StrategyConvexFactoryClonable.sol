@@ -526,7 +526,7 @@ contract StrategyConvexFactoryClonable is BaseStrategy {
     /* ========== CONSTANT FUNCTIONS ========== */
     // these should stay the same across different wants.
 
-    function deployCredit() public onlyKeepers {
+    function deployCredit() external onlyKeepers {
         uint256 profit = 0;
         uint256 loss = 0;
         uint256 debtPayment = 0;
