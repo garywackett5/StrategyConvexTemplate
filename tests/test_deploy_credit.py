@@ -73,13 +73,12 @@ def test_simple_harvest(
     ## now we test deploy_credit
 
     ## deposit to the vault after approving
-    startingWhale2 = token.balanceOf(whale)
     vault.deposit(amount, {"from": whale})
     booster.earmarkRewards(strategy.pid(), {"from": strategist})
 
     # this is part of our check into the staking contract balance
     stakingBeforeDeployCredit = rewardsContract.balanceOf(strategy)
-    print(stakingBeforeDeployCredit)
+    print("\nBefore deployCredit: ", stakingBeforeDeployCredit / 1e18)
 
     # harvest, store asset amount
     chain.sleep(1)
@@ -89,8 +88,7 @@ def test_simple_harvest(
     assert old_assets > 0
     assert token.balanceOf(strategy) == 0
     assert strategy.estimatedTotalAssets() > 0
-    print("\nStarting Assets: ", old_assets / 1e18)
 
     # try and include custom logic here to check that funds are in the staking contract (if needed)
-    print("\nBalance of rewardsContract: ", rewardsContract.balanceOf(strategy) / 1e18)
-    assert rewardsContract.balanceOf(strategy) > stakingBeforeHarvest2
+    print("\nAfter deployCredit: ", rewardsContract.balanceOf(strategy) / 1e18)
+    assert rewardsContract.balanceOf(strategy) > stakingBeforeDeployCredit
